@@ -7,6 +7,58 @@ let activeWorkoutSession=null;
 let restTimerInterval=null;
 let workoutAnimationInterval=null;
 let autoPromptTimeout=null;
+let rpgChartInstance=null;
+
+// COACH NUTRITION & TACTICAL TIPS
+function generateCoachTip(imc, routineId) {
+    if (!imc) imc = 22.0;
+    let tip = "";
+    
+    // 1. Evaluación Base por IMC
+    if (imc < 18.5) {
+        tip = "Titán, estás en fase de construcción pura. Necesitas un superávit calórico agresivo: aumenta tus porciones de carbohidratos (arroz, pasta, avena) y no escatimes en grasas saludables. ¡Tu cuerpo necesita combustible para mutar!";
+    } else if (imc >= 25) {
+        tip = "Enfoque en definición táctica, Titán. Prioriza proteínas magras (pollo, pescado, claras) y mucha fibra para mantener la saciedad. Mantén un déficit ligero para que la grasa desaparezca pero tu fuerza se quede.";
+    } else {
+        tip = "Estás en el punto óptimo de recomposición. Mantén tus macros equilibrados. Proteína constante para reparar y carbohidratos complejos antes de entrenar para tener energía explosiva.";
+    }
+
+    // 2. Contexto por Rutina del Día
+    if (routineId === 1) {
+        tip += " Hoy que toca Empuje, asegúrate de consumir magnesio post-entreno para relajar el sistema nervioso del tren superior.";
+    } else if (routineId === 2) {
+        tip += " ¡DÍA DE PIERNA! El desgaste es masivo. Consume carbohidratos de asimilación rápida (plátano o miel) apenas termines y rehidrátate con electrolitos. Tus piernas son el motor de tu cuerpo.";
+    } else if (routineId === 3) {
+        tip += " En tu rutina de Tirón, los dorsales y bíceps sufren micro-desgarros. Asegura una dosis extra de aminoácidos o proteína de suero para una reparación profunda esta noche.";
+    } else {
+        tip += " Hoy es día de recuperación estratégica. Prioriza el descanso, consume Omega 3 para reducir la inflamación y duerme al menos 8 horas. El músculo crece cuando descansas, no cuando entrenas.";
+    }
+
+    return tip;
+}
+
+// VOICE FEEDBACK SYSTEM
+function speakCoach(text) {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Intentar encontrar una voz femenina en español
+    const voices = window.speechSynthesis.getVoices();
+    const femaleVoice = voices.find(v => 
+        (v.lang.includes('es') || v.lang.includes('ES')) && 
+        (v.name.includes('Google') || v.name.includes('Helena') || v.name.includes('Monica') || v.name.includes('Sabina') || v.name.includes('Zira'))
+    );
+
+    if (femaleVoice) {
+        utterance.voice = femaleVoice;
+    }
+
+    utterance.lang = 'es-ES';
+    utterance.rate = 1.0; // Velocidad normal para naturalidad
+    utterance.pitch = 1.1; // Tono ligeramente más alto para calidez
+    window.speechSynthesis.speak(utterance);
+}
 
 let dictionaryLevels={
 'beginner':'<i class="fa-solid fa-star"></i> Principiante',
@@ -51,6 +103,7 @@ loading.classList.add('hidden');
         if(userProfile.lifetimeReps === undefined) userProfile.lifetimeReps = 0;
         if(userProfile.lifetimeWorkouts === undefined) userProfile.lifetimeWorkouts = 0;
         if(userProfile.currentRank === undefined) userProfile.currentRank = 'Cazador Rango E';
+        if(!userProfile.rpgStats) userProfile.rpgStats = { fuerza: 10, resistencia: 10, agilidad: 10, vitalidad: 10 };
         renderDashboard();
     }
 else{catalog.style.display='block';renderExercises(allExercises);}
@@ -181,7 +234,7 @@ return null;
 let day1=[getStrictEx('pecho'),getStrictEx('brazos'),getStrictEx('pecho')].filter(Boolean);
 let day2=[getStrictEx('piernas'),getStrictEx('abdomen'),getStrictEx('piernas')].filter(Boolean);
 let day3=[getStrictEx('espalda'),getStrictEx('hombros'),getStrictEx('espalda')].filter(Boolean);
-userProfile={height:height,weight:weight,level:level,levelName:levelName,time:time,imc:imc,imcDisplay:imcDisplay,repsPlan:repsPlan,duration:duration,freq:freq,weeklyPlan:weeklyPlan,day1:day1,day2:day2,day3:day3,setsNum:setsNum,repsTarget:targetReps.toString(),restSecs:restSecs,completedDays:[],lifetimeReps:0,lifetimeWorkouts:0,currentRank:'Cazador Rango E'};
+userProfile={height:height,weight:weight,level:level,levelName:levelName,time:time,imc:imc,imcDisplay:imcDisplay,repsPlan:repsPlan,duration:duration,freq:freq,weeklyPlan:weeklyPlan,day1:day1,day2:day2,day3:day3,setsNum:setsNum,repsTarget:targetReps.toString(),restSecs:restSecs,completedDays:[],lifetimeReps:0,lifetimeWorkouts:0,currentRank:'Cazador Rango E',rpgStats:{fuerza:10,resistencia:10,agilidad:10,vitalidad:10}};
 localStorage.setItem('titanProfile',JSON.stringify(userProfile));
 closeProfileModal();
 renderDashboard();
@@ -196,6 +249,8 @@ function renderDashboard() {
     document.getElementById('main-dashboard').classList.remove('hidden');
     document.getElementById('nav-btn-text').innerText = "Actualizar mi Plan";
 
+    if (!userProfile.rpgStats) userProfile.rpgStats = { fuerza: 10, resistencia: 10, agilidad: 10, vitalidad: 10 };
+    
     document.getElementById('dash-level').innerText = userProfile.levelName || "Desconocido";
     document.getElementById('dash-imc').innerText = userProfile.imcDisplay || userProfile.imc;
     document.getElementById('dash-duration').innerText = userProfile.duration;
@@ -211,7 +266,6 @@ function renderDashboard() {
     let calendarContainer = document.getElementById('weekly-calendar');
     calendarContainer.innerHTML = '';
     
-    // Obtener día actual (0=Domingo, 1=Lunes, ...)
     let realDayIdx = new Date().getDay();
     let dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     let todayName = dayNames[realDayIdx];
@@ -258,6 +312,11 @@ function renderDashboard() {
                 <div class="day-card__desc">${day.desc}</div>
             </div>`;
     });
+
+    // Inyectar Tip del Coach Nutricional
+    const coachTip = generateCoachTip(parseFloat(userProfile.imc), routineAllowedToday);
+    const tipEl = document.getElementById('dash-coach-tip');
+    if (tipEl) tipEl.innerText = coachTip;
 
     let renderDayCard = function(dayNum, title, exercises) {
         let isCompleted = userProfile.completedDays.includes(dayNum);
@@ -311,6 +370,8 @@ function renderDashboard() {
         renderDayCard(1, "Empuje (Push)", userProfile.day1) +
         renderDayCard(2, "Base Titán", userProfile.day2) +
         renderDayCard(3, "Tirón (Pull)", userProfile.day3);
+
+    renderStatsChart();
 
     checkTimeStatus();
     if (timeCheckerInterval) clearInterval(timeCheckerInterval);
@@ -518,11 +579,19 @@ function completeSet() {
 
     activeWorkoutSession.isResting = true;
     activeWorkoutSession.timeLeft = activeWorkoutSession.restSecs;
+    
+    speakCoach("Descanso de " + activeWorkoutSession.restSecs + " segundos. Respira profundo.");
+    
     renderWorkoutView();
 
     if (restTimerInterval) clearInterval(restTimerInterval);
     restTimerInterval = setInterval(function() {
         activeWorkoutSession.timeLeft--;
+        
+        if (activeWorkoutSession.timeLeft === 10) {
+            speakCoach("Prepárate, 10 segundos.");
+        }
+        
         if (activeWorkoutSession.timeLeft <= 0) skipRest();
         else updateRestUI();
     }, 1000);
@@ -541,6 +610,8 @@ function skipRest() {
     if (restTimerInterval) clearInterval(restTimerInterval);
     activeWorkoutSession.isResting = false;
     activeWorkoutSession.currentSet++;
+    
+    speakCoach("¡A la carga, siguiente serie!");
 
     if (activeWorkoutSession.currentSet > activeWorkoutSession.totalSets) {
         activeWorkoutSession.currentSet = 1;
@@ -592,6 +663,13 @@ function finishWorkout() {
     userProfile.lifetimeReps = (userProfile.lifetimeReps || 0) + finalReps;
     userProfile.lifetimeWorkouts = (userProfile.lifetimeWorkouts || 0) + 1;
     
+    // Evolución de Atributos RPG
+    if (!userProfile.rpgStats) userProfile.rpgStats = { fuerza: 10, resistencia: 10, agilidad: 10, vitalidad: 10 };
+    if (dayNum === 1) userProfile.rpgStats.fuerza += 3;
+    else if (dayNum === 2) userProfile.rpgStats.resistencia += 3;
+    else if (dayNum === 3) userProfile.rpgStats.agilidad += 3;
+    userProfile.rpgStats.vitalidad = (userProfile.rpgStats.vitalidad || userProfile.rpgStats.vitality || 10) + 2;
+
     checkRankUp();
 
     if (!userProfile.completedDays.includes(dayNum)) {
@@ -606,7 +684,10 @@ function finishWorkout() {
     document.body.style.overflow = 'auto';
     renderDashboard();
     
-    alert("¡TREMENDO TRABAJO TITÁN!\nHas completado el entrenamiento acumulando " + finalReps + " repeticiones." + adjustmentMsg);
+    let finalTip = generateCoachTip(parseFloat(userProfile.imc), dayNum);
+    speakCoach("¡Entrenamiento completado, tremendo trabajo Titán!");
+    
+    alert("¡TREMENDO TRABAJO TITÁN!\nHas completado el entrenamiento acumulando " + finalReps + " repeticiones." + adjustmentMsg + "\n\n🍎 Tip de Recuperación:\n" + finalTip);
 }
 
 function checkRankUp() {
@@ -661,6 +742,64 @@ function updateGamificationUI() {
     }
     
     expFill.style.width = `${progress}%`;
+}
+
+function renderStatsChart() {
+    if (typeof Chart === 'undefined') {
+        console.warn('Chart.js no ha cargado aún. Reintentando...');
+        setTimeout(renderStatsChart, 500);
+        return;
+    }
+    if (!userProfile || !userProfile.rpgStats) return;
+    
+    const stats = userProfile.rpgStats;
+    const ctx = document.getElementById('rpgStatsChart');
+    if (!ctx) return;
+
+    if (rpgChartInstance) {
+        rpgChartInstance.destroy();
+    }
+
+    rpgChartInstance = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Fuerza', 'Resistencia', 'Agilidad', 'Vitalidad'],
+            datasets: [{
+                label: 'Atributos del Cazador',
+                data: [
+                    stats.fuerza, 
+                    stats.resistencia, 
+                    stats.agilidad, 
+                    stats.vitalidad || 10
+                ],
+                backgroundColor: 'rgba(234, 179, 8, 0.2)',
+                borderColor: '#eab308',
+                borderWidth: 2,
+                pointBackgroundColor: '#3b82f6',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#3b82f6'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                r: {
+                    angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    pointLabels: {
+                        color: 'white',
+                        font: { family: 'Oswald', size: 14 }
+                    },
+                    ticks: { display: false },
+                    suggestedMin: 0
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
 }
 
 function closeWorkout() {

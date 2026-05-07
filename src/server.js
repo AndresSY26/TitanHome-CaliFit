@@ -20,12 +20,12 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             "default-src": ["'self'"],
-            "script-src": ["'self'", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
+            "script-src": ["'self'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "'unsafe-inline'"],
             "script-src-attr": ["'unsafe-inline'"],
             "style-src": ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com", "'unsafe-inline'"],
             "font-src": ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com"],
             "img-src": ["'self'", "https://raw.githubusercontent.com", "data:", "https://images.unsplash.com"],
-            "connect-src": ["'self'"]
+            "connect-src": ["'self'", "https://cdn.jsdelivr.net"]
         }
     }
 }));

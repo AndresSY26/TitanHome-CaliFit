@@ -1,45 +1,44 @@
-# 🔱 TitanHome CaliFit - Tu Gimnasio en Casa con Inteligencia
+# 🔱 TitanHome CaliFit - Smart Calisthenics Home Coach
 
-![Banner](https://images.unsplash.com/photo-1599058917212-d750089bc07e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80)
+![TitanHome Banner](https://images.unsplash.com/photo-1517836357463-d25dfeac3438?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80)
 
-**TitanHome CaliFit** es un entrenador personal inteligente de calistenia diseñado para transformar tu cuerpo usando únicamente tu peso corporal. Esta aplicación migra una lógica SPA avanzada a una arquitectura robusta de **Node.js + Express**, ofreciendo una experiencia premium, segura y altamente personalizada.
+**TitanHome CaliFit** es una plataforma de entrenamiento inteligente diseñada para transformar tu hogar en un templo de calistenia. Utilizando una arquitectura moderna basada en **Node.js**, **Express** y **EJS**, combinada con una estética **Glassmorphism** premium, esta aplicación ofrece una experiencia de gamificación estilo RPG única en su clase.
 
 ## 🚀 Características Principales
 
-### 🧠 Coach Inteligente & Algoritmo de Rutinas
-- **Análisis de Perfil**: Cálculo automático de IMC con diagnóstico de composición corporal.
-- **Generación de Rutinas**: Algoritmo que asigna ejercicios basados en tu nivel (Principiante, Intermedio, Experto) y categorías musculares (Empuje, Tirón, Base).
-- **Selección Estricta**: Los ejercicios se filtran para evitar equipamiento (Anti-Equipo) y duplicidad entre días de entrenamiento.
+### 💎 Interfaz Ultra-Moderna (Glassmorphism)
+*   Diseño técnico y elegante basado en transparencias, desenfoques dinámicos y acentos neón.
+*   Experiencia de usuario fluida con micro-animaciones y layouts responsivos.
 
-### 📅 Dashboard del Titán
-- **Calendario Semanal**: Visualización clara de días de entrenamiento y descanso.
-- **Rastreador de Horario**: Widget dinámico que sincroniza con tu horario local para indicarte cuándo es hora de entrenar.
-- **Historial de Progreso**: Persistencia local de días completados.
+### 🎮 Sistema de Progresión RPG (Gamificación)
+*   **Rangos de Cazador**: Escala desde el *Rango E (Novato)* hasta el legendario *Rango S (Titán)* acumulando repeticiones totales.
+*   **Atributos Dinámicos**: Tu **Fuerza**, **Resistencia**, **Agilidad** y **Vitalidad** suben de nivel dependiendo de la rutina que completes.
+*   **Misiones Diarias**: Un dashboard intuitivo que te presenta tu "Misión del Día" basada en tu perfil biomecánico.
 
-### 🎬 Reproductor de Entrenamiento (Live Mode)
-- **Animaciones Fluidas**: Guía visual interactiva para cada ejercicio.
-- **Smart Coach Prompt**: El sistema detecta automáticamente cuándo deberías haber terminado tus repeticiones según tu perfil biomecánico.
-- **Descanso Activo**: Cronómetro integrado para asegurar una recuperación óptima.
+### 🤖 Coach Inteligente & Análisis Biomecánico
+*   **Ajuste Dinámico**: El algoritmo analiza tu rendimiento en tiempo real. Si superas tus metas, la dificultad aumenta (más reps, menos descanso); si te cuesta, el Coach ajusta el plan para asegurar tu progreso.
+*   **Retroalimentación por Voz**: El Coach te habla durante los descansos y al finalizar la sesión utilizando la *Web Speech API*, permitiéndote entrenar sin mirar la pantalla.
 
-### 🔍 Catálogo Maestro
-- Base de datos de más de 100 ejercicios filtrados.
-- Búsqueda en tiempo real y filtrado por grupos musculares.
-- Traducción automática de instrucciones al español.
+### 🍎 Nutrición Táctica Contextual
+*   Generación de consejos nutricionales basados en tu **IMC** y el tipo de entrenamiento realizado, optimizando tu recuperación post-misión.
+
+### 📱 Progressive Web App (PWA)
+*   **Instalable**: Añade CaliFit a tu pantalla de inicio como una app nativa.
+*   **Modo Offline**: Soporte para funcionamiento sin conexión gracias a Service Workers y estrategias de caché avanzadas.
 
 ## 🛠️ Stack Tecnológico
 
-- **Backend**: Node.js, Express.
-- **Frontend**: Vanilla JavaScript (ES6+), CSS Puro (Diseño Modular, Flexbox, Grid).
-- **Vistas**: EJS (Embedded JavaScript templates).
-- **Seguridad**: Helmet (CSP), CORS, Rate Limiting.
-- **API**: Integración con `free-exercise-db` y proxy de traducción de Google.
+*   **Backend**: Node.js, Express.
+*   **Frontend**: Vanilla JS (ES Modules), CSS Puro (Variables & Flexbox/Grid), EJS.
+*   **Visualización**: Chart.js (Radar Stats).
+*   **Seguridad**: Helmet (CSP), Rate Limiting, CORS.
+*   **Almacenamiento**: Persistencia local inteligente con `localStorage`.
 
 ## 📦 Instalación y Uso
 
 1. **Clonar el repositorio:**
    ```bash
    git clone https://github.com/AndresSY26/TitanHome-CaliFit.git
-   cd TitanHome-CaliFit
    ```
 
 2. **Instalar dependencias:**
@@ -53,20 +52,17 @@
    PORT=3000
    ```
 
-4. **Ejecutar en desarrollo:**
+4. **Iniciar en modo desarrollo:**
    ```bash
    npm run dev
    ```
 
-5. **Abrir en el navegador:**
-   `http://localhost:3000`
+5. **Acceder a la plataforma:**
+   Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
-## 🛡️ Arquitectura MVC
-El proyecto sigue el patrón **Modelo-Vista-Controlador** para máxima escalabilidad:
-- `/src/controllers`: Lógica de negocio y manejo de datos de ejercicios.
-- `/src/routes`: Definición de endpoints de la API y rutas web.
-- `/src/views`: Plantillas dinámicas EJS y parciales.
-- `/src/public`: Activos estáticos (CSS modular y JS de la SPA).
+## 📜 Licencia
+
+Este proyecto está bajo la licencia MIT.
 
 ---
-Desarrollado con pasión para Titanes del Fitness. 💪
+*Desarrollado con pasión para Titanes por AndresSY26.*
