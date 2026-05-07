@@ -44,8 +44,15 @@ let response=await fetch('/api/exercises');
 if(!response.ok)throw new Error('Network error');
 allExercises=await response.json();
 loading.classList.add('hidden');
-let saved=localStorage.getItem('titanProfile');
-if(saved){userProfile=JSON.parse(saved);renderDashboard();}
+    let saved=localStorage.getItem('titanProfile');
+    if(saved){
+        userProfile=JSON.parse(saved);
+        // Asegurar propiedades de gamificación para perfiles existentes
+        if(userProfile.lifetimeReps === undefined) userProfile.lifetimeReps = 0;
+        if(userProfile.lifetimeWorkouts === undefined) userProfile.lifetimeWorkouts = 0;
+        if(userProfile.currentRank === undefined) userProfile.currentRank = 'Cazador Rango E';
+        renderDashboard();
+    }
 else{catalog.style.display='block';renderExercises(allExercises);}
 }catch(err){loading.classList.add('hidden');error.classList.remove('hidden');}
 }
@@ -174,7 +181,7 @@ return null;
 let day1=[getStrictEx('pecho'),getStrictEx('brazos'),getStrictEx('pecho')].filter(Boolean);
 let day2=[getStrictEx('piernas'),getStrictEx('abdomen'),getStrictEx('piernas')].filter(Boolean);
 let day3=[getStrictEx('espalda'),getStrictEx('hombros'),getStrictEx('espalda')].filter(Boolean);
-userProfile={height:height,weight:weight,level:level,levelName:levelName,time:time,imc:imc,imcDisplay:imcDisplay,repsPlan:repsPlan,duration:duration,freq:freq,weeklyPlan:weeklyPlan,day1:day1,day2:day2,day3:day3,setsNum:setsNum,repsTarget:targetReps.toString(),restSecs:restSecs,completedDays:[]};
+userProfile={height:height,weight:weight,level:level,levelName:levelName,time:time,imc:imc,imcDisplay:imcDisplay,repsPlan:repsPlan,duration:duration,freq:freq,weeklyPlan:weeklyPlan,day1:day1,day2:day2,day3:day3,setsNum:setsNum,repsTarget:targetReps.toString(),restSecs:restSecs,completedDays:[],lifetimeReps:0,lifetimeWorkouts:0,currentRank:'Cazador Rango E'};
 localStorage.setItem('titanProfile',JSON.stringify(userProfile));
 closeProfileModal();
 renderDashboard();
@@ -195,6 +202,9 @@ function renderDashboard() {
     document.getElementById('dash-reps').innerText = userProfile.repsPlan;
     document.getElementById('dash-freq').innerText = userProfile.freq;
     document.getElementById('tracker-scheduled-time').innerText = userProfile.time;
+
+    // Actualizar Widget de Gamificación
+    updateGamificationUI();
 
     if (!userProfile.completedDays) userProfile.completedDays = [];
 
@@ -551,16 +561,77 @@ function finishWorkout() {
     let finalReps = activeWorkoutSession.totalRepsCompleted;
     let dayNum = activeWorkoutSession.dayNum;
     
+    // Actualizar Estadísticas Globales (Gamificación)
+    userProfile.lifetimeReps = (userProfile.lifetimeReps || 0) + finalReps;
+    userProfile.lifetimeWorkouts = (userProfile.lifetimeWorkouts || 0) + 1;
+    
+    checkRankUp();
+
     if (!userProfile.completedDays.includes(dayNum)) {
         userProfile.completedDays.push(dayNum);
-        localStorage.setItem('titanProfile', JSON.stringify(userProfile));
     }
+    
+    localStorage.setItem('titanProfile', JSON.stringify(userProfile));
 
     activeWorkoutSession = null;
     document.getElementById('workout-player-modal').style.display = 'none';
     document.body.style.overflow = 'auto';
     renderDashboard();
     alert("¡TREMENDO TRABAJO TITÁN!\nHas completado el entrenamiento acumulando " + finalReps + " repeticiones.");
+}
+
+function checkRankUp() {
+    if (!userProfile) return;
+    let reps = userProfile.lifetimeReps || 0;
+    let oldRank = userProfile.currentRank;
+    let newRank = 'Cazador Rango E';
+
+    if (reps > 10000) newRank = 'Cazador Rango S (Titán)';
+    else if (reps > 6000) newRank = 'Cazador Rango A (Monarca)';
+    else if (reps > 3000) newRank = 'Cazador Rango B (Sombra)';
+    else if (reps > 1500) newRank = 'Cazador Rango C (Élite)';
+    else if (reps > 500) newRank = 'Cazador Rango D (Iniciado)';
+
+    userProfile.currentRank = newRank;
+    
+    if (oldRank && oldRank !== newRank) {
+        // Alerta especial de ascenso
+        setTimeout(() => {
+            alert(`¡ASCENSO ÉPICO!\nHas subido de rango.\nNuevo Rango: ${newRank}`);
+        }, 500);
+    }
+}
+
+function updateGamificationUI() {
+    if (!userProfile) return;
+    const rankEl = document.getElementById('dash-rank');
+    const expFill = document.getElementById('exp-fill');
+    const expText = document.getElementById('exp-text');
+    
+    if (!rankEl) return;
+
+    rankEl.innerText = userProfile.currentRank;
+    
+    let reps = userProfile.lifetimeReps || 0;
+    let nextThreshold = 500;
+    let prevThreshold = 0;
+
+    if (reps > 10000) { nextThreshold = reps; prevThreshold = 10000; }
+    else if (reps > 6000) { nextThreshold = 10000; prevThreshold = 6000; }
+    else if (reps > 3000) { nextThreshold = 6000; prevThreshold = 3000; }
+    else if (reps > 1500) { nextThreshold = 3000; prevThreshold = 1500; }
+    else if (reps > 500) { nextThreshold = 1500; prevThreshold = 500; }
+    
+    let progress = 0;
+    if (reps >= 10000) {
+        progress = 100;
+        expText.innerText = `Rango Máximo Alcanzado | Reps Totales: ${reps}`;
+    } else {
+        progress = ((reps - prevThreshold) / (nextThreshold - prevThreshold)) * 100;
+        expText.innerText = `Repeticiones Totales: ${reps} / ${nextThreshold} para el siguiente Rango`;
+    }
+    
+    expFill.style.width = `${progress}%`;
 }
 
 function closeWorkout() {
@@ -584,3 +655,12 @@ document.addEventListener('keydown', function(e) {
 });
 
 window.onload = loadExercises;
+
+// PWA Service Worker Registration
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('[PWA] Service Worker registrado con éxito:', reg.scope))
+            .catch(err => console.error('[PWA] Error al registrar el Service Worker:', err));
+    });
+}
