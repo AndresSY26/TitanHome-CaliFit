@@ -1,0 +1,22 @@
+<!-- CATÁLOGO COMPLETO -->
+<div id="catalog-section">
+    <div class="catalog-header">
+        <h2>O explora el catálogo completo</h2>
+        <div class="search-box">
+            <i class="fa-solid fa-search search-box__icon"></i>
+            <input type="text" id="searchInput" placeholder="Buscar ejercicio (ej. Push-up, Squat)..." class="search-box__input">
+        </div>
+    </div>
+
+    <div class="filters" id="filters-container">
+        <button onclick="filterExercises('todos')" class="filter-btn filter-btn--active">Todos</button>
+        <button onclick="filterExercises('pecho')" class="filter-btn">Pecho</button>
+        <button onclick="filterExercises('espalda')" class="filter-btn">Espalda</button>
+        <button onclick="filterExercises('brazos')" class="filter-btn">Brazos</button>
+        <button onclick="filterExercises('abdomen')" class="filter-btn">Abdomen</button>
+        <button onclick="filterExercises('piernas')" class="filter-btn">Piernas</button>
+        <button onclick="filterExercises('hombros')" class="filter-btn">Hombros</button>
+    </div>
+
+    <div id="exercises-grid" class="exercises-grid"></div>
+</div>

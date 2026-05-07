@@ -1,0 +1,113 @@
+<!-- Modal de Creación de Perfil -->
+<div id="profile-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-backdrop" onclick="closeProfileModal()"></div>
+    <div class="modal-content modal-content--sm">
+        <button onclick="closeProfileModal()" class="modal-close"><i class="fa-solid fa-times"></i></button>
+        <h2 class="modal-heading"><i class="fa-solid fa-id-card text-accent"></i> Configura tu Plan</h2>
+        <p class="modal-sub">Generaremos una ruta de entrenamiento solo con lo que necesitas.</p>
+
+        <form id="profile-form" onsubmit="generateRoutine(event)" class="profile-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Estatura (cm)</label>
+                    <input type="number" id="user-height" required min="100" max="250" placeholder="Ej: 175" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Peso (kg)</label>
+                    <input type="number" id="user-weight" required min="30" max="200" placeholder="Ej: 70" class="form-input">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nivel Físico</label>
+                <select id="user-level" required class="form-input">
+                    <option value="beginner">Principiante (Empiezo de cero)</option>
+                    <option value="intermediate">Intermedio (Hago ejercicio regularmente)</option>
+                    <option value="expert">Avanzado (Busco máxima hipertrofia)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Horario de Entrenamiento</label>
+                <input type="time" id="user-time" required class="form-input" style="color-scheme:dark;">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Generar Ruta</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Detalles del Ejercicio -->
+<div id="exercise-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-backdrop" onclick="closeModal()"></div>
+    <div id="modal-content" class="modal-content modal-content--lg">
+        <button onclick="closeModal()" class="modal-close modal-close--circle"><i class="fa-solid fa-times"></i></button>
+        <div class="modal-detail-header">
+            <h2 id="modal-title" class="modal-detail-title">Cargando...</h2>
+            <div class="modal-tags">
+                <span id="modal-level" class="tag tag--yellow">Nivel</span>
+                <span id="modal-muscle" class="tag tag--blue">Músculo</span>
+            </div>
+        </div>
+        <div class="modal-detail-body">
+            <div class="modal-images">
+                <div class="modal-img-wrap">
+                    <img id="modal-img-1" src="" alt="Posición Inicial">
+                    <div class="modal-img-label">Posición Inicial</div>
+                </div>
+                <div class="modal-img-wrap">
+                    <img id="modal-img-2" src="" alt="Posición Final">
+                    <div class="modal-img-label">Posición Final</div>
+                </div>
+            </div>
+            <h3 class="instructions-title"><i class="fa-solid fa-language"></i> Instrucciones de Ejecución</h3>
+            <div id="modal-instructions" class="instructions-list"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Reproductor de Entrenamiento en Vivo -->
+<div id="workout-player-modal" class="player-overlay" style="display:none;">
+
+    <!-- Auto-Prompt Overlay -->
+    <div id="wp-auto-prompt" class="auto-prompt" style="display:none;">
+        <div class="auto-prompt__card">
+            <i class="fa-solid fa-stopwatch auto-prompt__icon"></i>
+            <h3 class="auto-prompt__title">¡Tiempo Estimado!</h3>
+            <p class="auto-prompt__text" id="wp-auto-prompt-text">El sistema calcula que ya debiste terminar tus repeticiones. ¿Completadas?</p>
+            <div class="auto-prompt__actions">
+                <button onclick="confirmAutoPrompt()" class="btn btn-primary btn-block btn-lg">¡Sí, a descansar! <i class="fa-solid fa-check-circle"></i></button>
+                <button onclick="hideAutoPrompt()" class="btn btn-ghost btn-block">Aún no, sigo entrenando</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cabecera -->
+    <div class="player-header">
+        <div id="wp-progress" class="player-progress">
+            <i class="fa-solid fa-chart-simple text-accent"></i> Ejercicio 1 de 3 | Serie 1 de 3
+        </div>
+        <button onclick="closeWorkout()" class="modal-close modal-close--circle"><i class="fa-solid fa-times"></i></button>
+    </div>
+
+    <div class="player-body">
+        <h2 id="wp-title" class="player-title">Título</h2>
+
+        <!-- Ejercicio Activo -->
+        <div id="wp-active-container" class="player-active">
+            <div class="player-imgbox">
+                <img id="wp-img-1" src="" class="player-img player-img--visible">
+                <img id="wp-img-2" src="" class="player-img player-img--hidden">
+                <div class="player-live-badge"><i class="fa-solid fa-bolt"></i> En Ejecución</div>
+            </div>
+            <div id="wp-status"></div>
+        </div>
+
+        <!-- Descanso Activo -->
+        <div id="wp-rest-container" class="player-rest" style="display:none;">
+            <i class="fa-solid fa-bed player-rest__icon"></i>
+            <h3 class="player-rest__title">Descanso Activo</h3>
+            <div id="wp-timer" class="player-rest__timer">00:00</div>
+            <p class="player-rest__sub">Recupera el aliento para la siguiente serie.</p>
+        </div>
+
+        <div id="wp-main-action" class="player-actions"></div>
+    </div>
+</div>

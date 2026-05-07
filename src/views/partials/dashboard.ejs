@@ -1,0 +1,40 @@
+<!-- DASHBOARD DE ENTRENAMIENTO -->
+<div id="main-dashboard" class="dashboard hidden">
+    <div class="dashboard-glow"></div>
+
+    <div class="dashboard-header">
+        <h2 class="dashboard-title">Tu Camino del Titán</h2>
+
+        <div class="badge-container">
+            <span class="badge">Nivel: <strong id="dash-level">--</strong></span>
+            <span class="badge">IMC: <strong id="dash-imc">0</strong></span>
+            <span class="badge">Duración: <strong id="dash-duration">0 min</strong></span>
+            <span class="badge">Formato: <strong id="dash-reps">0</strong></span>
+            <span class="badge">Frecuencia: <strong id="dash-freq">0 Días</strong></span>
+        </div>
+
+        <div class="weekly-section">
+            <h3 class="section-title section-title--blue">Distribución Semanal <span class="section-subtitle">(Qué días entrenar y cuáles descansar)</span></h3>
+            <div id="weekly-calendar" class="calendar"></div>
+        </div>
+    </div>
+
+    <!-- Time Tracker -->
+    <div id="time-tracker" class="time-tracker time-tracker--idle">
+        <div class="time-tracker__info">
+            <i class="fa-regular fa-clock time-tracker__icon"></i>
+            <div>
+                <p class="time-tracker__label">Rastreador de Horario</p>
+                <p class="time-tracker__status" id="tracker-status">Calculando...</p>
+            </div>
+        </div>
+        <div class="time-tracker__time">
+            <p class="time-tracker__label">Hora Programada:</p>
+            <p class="time-tracker__clock" id="tracker-scheduled-time">00:00</p>
+        </div>
+    </div>
+
+    <h3 class="section-title section-title--yellow">Tu Rutina Asignada <span class="section-subtitle">(Haz clic en los ejercicios para ver cómo hacerlos)</span></h3>
+
+    <div class="routine-grid" id="routine-days"></div>
+</div>
