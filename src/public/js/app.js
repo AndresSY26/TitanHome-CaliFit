@@ -561,6 +561,33 @@ function finishWorkout() {
     let finalReps = activeWorkoutSession.totalRepsCompleted;
     let dayNum = activeWorkoutSession.dayNum;
     
+    // --- INICIO: ANÁLISIS BIOMECÁNICO DINÁMICO ---
+    let expectedReps = activeWorkoutSession.totalSets * parseInt(activeWorkoutSession.repsTarget);
+    let performanceRatio = finalReps / expectedReps;
+    let adjustmentMsg = "";
+
+    // Parsear valores actuales para asegurar operaciones matemáticas correctas
+    let currentReps = parseInt(userProfile.repsTarget);
+    let currentRest = parseInt(userProfile.restSecs);
+
+    if (performanceRatio >= 1.15) {
+        // Superó expectativas: Aumentar dificultad
+        currentReps = Math.min(30, currentReps + 1);
+        currentRest = Math.max(30, currentRest - 5);
+        adjustmentMsg = "\n\n🤖 Coach Titán: ¡Estás volando! He aumentado tu exigencia para la próxima sesión (Más reps, menos descanso).";
+    } else if (performanceRatio <= 0.85) {
+        // Se quedó corto: Reducir dificultad
+        currentReps = Math.max(5, currentReps - 1);
+        currentRest = Math.min(180, currentRest + 10);
+        adjustmentMsg = "\n\n🤖 Coach Titán: Buen esfuerzo. He ajustado tu plan para darte más tiempo de recuperación en la próxima sesión.";
+    }
+
+    // Actualizar perfil con nuevos valores y cadena de visualización
+    userProfile.repsTarget = currentReps.toString();
+    userProfile.restSecs = currentRest;
+    userProfile.repsPlan = userProfile.setsNum + ' series x ' + userProfile.repsTarget + ' reps (Descanso ' + userProfile.restSecs + 's)';
+    // --- FIN: ANÁLISIS BIOMECÁNICO DINÁMICO ---
+
     // Actualizar Estadísticas Globales (Gamificación)
     userProfile.lifetimeReps = (userProfile.lifetimeReps || 0) + finalReps;
     userProfile.lifetimeWorkouts = (userProfile.lifetimeWorkouts || 0) + 1;
@@ -571,13 +598,15 @@ function finishWorkout() {
         userProfile.completedDays.push(dayNum);
     }
     
+    // Guardar estado final actualizado
     localStorage.setItem('titanProfile', JSON.stringify(userProfile));
 
     activeWorkoutSession = null;
     document.getElementById('workout-player-modal').style.display = 'none';
     document.body.style.overflow = 'auto';
     renderDashboard();
-    alert("¡TREMENDO TRABAJO TITÁN!\nHas completado el entrenamiento acumulando " + finalReps + " repeticiones.");
+    
+    alert("¡TREMENDO TRABAJO TITÁN!\nHas completado el entrenamiento acumulando " + finalReps + " repeticiones." + adjustmentMsg);
 }
 
 function checkRankUp() {
