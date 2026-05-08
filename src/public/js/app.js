@@ -8,6 +8,7 @@ let restTimerInterval=null;
 let workoutAnimationInterval=null;
 let autoPromptTimeout=null;
 let rpgChartInstance=null;
+let lastSwappedExId=null;
 
 // COACH NUTRITION & TACTICAL TIPS
 function generateCoachTip(imc, routineId) {
@@ -237,6 +238,7 @@ let day3=[getStrictEx('espalda'),getStrictEx('hombros'),getStrictEx('espalda')].
 userProfile={height:height,weight:weight,level:level,levelName:levelName,time:time,imc:imc,imcDisplay:imcDisplay,repsPlan:repsPlan,duration:duration,freq:freq,weeklyPlan:weeklyPlan,day1:day1,day2:day2,day3:day3,setsNum:setsNum,repsTarget:targetReps.toString(),restSecs:restSecs,completedDays:[],lifetimeReps:0,lifetimeWorkouts:0,currentRank:'Cazador Rango E',rpgStats:{fuerza:10,resistencia:10,agilidad:10,vitalidad:10}};
 localStorage.setItem('titanProfile',JSON.stringify(userProfile));
 closeProfileModal();
+subscribeToPushNotifications();
 renderDashboard();
 document.getElementById('main-dashboard').scrollIntoView({behavior:'smooth',block:'start'});
 }
@@ -351,13 +353,19 @@ function renderDashboard() {
             let muscle = dictionaryMuscles[ex.primaryMuscles[0]] || ex.primaryMuscles[0];
             let titleStyle = isCompleted ? 'text-decoration:line-through; opacity:0.5;' : '';
             
+            let isJustSwapped = ex.id === lastSwappedExId;
+            let animClass = isJustSwapped ? 'card-refresh' : '';
+            
             html += `
-                <div onclick="openModal(${ex.id})" class="routine-ex">
+                <div onclick="openModal(${ex.id})" class="routine-ex ${animClass}">
                     <img src="${img}" class="routine-ex__img">
                     <div style="flex-grow:1;">
                         <div class="routine-ex__name" style="${titleStyle}">${ex.name}</div>
                         <div class="routine-ex__muscle"><i class="fa-solid fa-fire text-yellow"></i> ${muscle}</div>
                     </div>
+                    <button class="btn-reroll" onclick="event.stopPropagation(); swapExercise(${dayNum}, ${ex.id})" title="Cambiar ejercicio" style="margin-right: 0.5rem;">
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
                     <i class="fa-solid fa-chevron-right" style="font-size:0.7rem; color:var(--text-secondary);"></i>
                 </div>
             `;
@@ -375,7 +383,59 @@ function renderDashboard() {
 
     checkTimeStatus();
     if (timeCheckerInterval) clearInterval(timeCheckerInterval);
-    timeCheckerInterval = setInterval(checkTimeStatus, 60000);
+    timeCheckerInterval = setInterval(checkTimeStatus, 1000);
+}
+
+function swapExercise(dayNum, oldExId) {
+    if (!userProfile) return;
+    
+    let dayKey = 'day' + dayNum;
+    let dayExercises = userProfile[dayKey];
+    if (!dayExercises) return;
+
+    let oldExIdx = dayExercises.findIndex(ex => ex.id === oldExId);
+    if (oldExIdx === -1) return;
+
+    let oldEx = dayExercises[oldExIdx];
+    let muscleGroup = oldEx.primaryMuscles[0];
+
+    // Filtrar Substitutos
+    let currentExIds = dayExercises.map(ex => ex.id);
+    let pool = allExercises.filter(ex => 
+        ex.primaryMuscles[0] === muscleGroup && 
+        ex.level === userProfile.level && 
+        !currentExIds.includes(ex.id)
+    );
+
+    // Si no hay del mismo nivel, buscar en cualquier nivel
+    if (pool.length === 0) {
+        pool = allExercises.filter(ex => 
+            ex.primaryMuscles[0] === muscleGroup && 
+            !currentExIds.includes(ex.id)
+        );
+    }
+
+    if (pool.length > 0) {
+        // Selección Aleatoria
+        let randomIdx = Math.floor(Math.random() * pool.length);
+        let newEx = pool[randomIdx];
+
+        // Reemplazar
+        dayExercises[oldExIdx] = newEx;
+        userProfile[dayKey] = dayExercises;
+        lastSwappedExId = newEx.id;
+
+        // Persistencia
+        localStorage.setItem('titanProfile', JSON.stringify(userProfile));
+
+        // Renderizar de nuevo
+        renderDashboard();
+        
+        // Limpiar el ID después de un tiempo para que no vuelva a brillar
+        setTimeout(() => { lastSwappedExId = null; }, 1000);
+    } else {
+        alert("No se encontraron ejercicios de reemplazo para este grupo muscular.");
+    }
 }
 
 function checkTimeStatus() {
@@ -404,24 +464,27 @@ function checkTimeStatus() {
     }
 
     let now = new Date();
-    let currentStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-    let timeToMins = function(tStr) { return parseInt(tStr.split(':')[0]) * 60 + parseInt(tStr.split(':')[1]); };
+    let parts = userProfile.time.split(':');
+    let targetDate = new Date();
+    targetDate.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
     
-    let nowMins = timeToMins(currentStr);
-    let targetMins = timeToMins(userProfile.time);
-    let diff = targetMins - nowMins;
+    let diffMs = targetDate - now;
+    let diffSecs = Math.floor(diffMs / 1000);
 
-    if (diff > 0 && diff <= 60) {
+    if (diffSecs > 0 && diffSecs <= 3600) {
         tracker.className = "time-tracker time-tracker--active animate-pulse";
-        statusTxt.innerText = `Prepárate, empiezas en ${diff} min`;
-    } else if (Math.abs(diff) <= 60) {
+        let mins = Math.floor(diffSecs / 60);
+        let secs = diffSecs % 60;
+        statusTxt.innerText = `Prepárate, empiezas en ${mins}m ${secs}s`;
+    } else if (diffSecs <= 0 && diffSecs >= -3600) {
         tracker.className = "time-tracker time-tracker--active";
         statusTxt.innerText = "¡ES HORA DE ENTRENAR!";
-    } else if (diff > 0) {
+    } else if (diffSecs > 3600) {
         tracker.className = "time-tracker time-tracker--idle";
-        let hours = Math.floor(diff / 60);
-        let mins = diff % 60;
-        statusTxt.innerText = `Faltan ${hours}h ${mins}m para tu sesión`;
+        let hours = Math.floor(diffSecs / 3600);
+        let mins = Math.floor((diffSecs % 3600) / 60);
+        let secs = diffSecs % 60;
+        statusTxt.innerText = `Faltan ${hours}h ${mins}m ${secs}s para tu sesión`;
     } else {
         tracker.className = "time-tracker time-tracker--idle";
         statusTxt.innerText = "Sesión programada ya pasó";
@@ -686,8 +749,15 @@ function finishWorkout() {
     
     let finalTip = generateCoachTip(parseFloat(userProfile.imc), dayNum);
     speakCoach("¡Entrenamiento completado, tremendo trabajo Titán!");
-    
-    alert("¡TREMENDO TRABAJO TITÁN!\nHas completado el entrenamiento acumulando " + finalReps + " repeticiones." + adjustmentMsg + "\n\n🍎 Tip de Recuperación:\n" + finalTip);
+
+    document.getElementById('comp-reps').innerText = finalReps;
+    document.getElementById('comp-adjustment').innerText = adjustmentMsg.replace('\n\n', '');
+    document.getElementById('comp-tip').innerText = finalTip;
+    document.getElementById('completion-modal').style.display = 'flex';
+}
+
+function closeCompletionModal() {
+    document.getElementById('completion-modal').style.display = 'none';
 }
 
 function checkRankUp() {
@@ -822,7 +892,152 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-window.onload = loadExercises;
+function showSection(sectionId, updateUrl = true) {
+    sectionId = sectionId.startsWith('#') ? sectionId : '#' + sectionId;
+    const sections = ['hero-section', 'main-dashboard', 'catalog-section', 'guild-section'];
+    sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (id === 'main-dashboard' || id === 'guild-section') {
+                el.classList.add('hidden');
+            } else {
+                el.style.display = 'none';
+            }
+        }
+    });
+
+    const target = document.getElementById(sectionId.replace('#', ''));
+    if (target) {
+        if (sectionId === '#main-dashboard' || sectionId === '#guild-section') {
+            target.classList.remove('hidden');
+        } else {
+            target.style.display = 'block';
+        }
+    }
+
+    if (sectionId === '#guild-section') {
+        renderGuild();
+    }
+
+    if (updateUrl) {
+        let path = '/';
+        if (sectionId === '#guild-section') path = '/guild';
+        else if (sectionId === '#catalog-section') path = '/catalog';
+        else if (sectionId === '#main-dashboard') path = '/dashboard';
+        
+        history.pushState({ section: sectionId }, '', path);
+    }
+}
+
+window.addEventListener('popstate', function(event) {
+    if (event.state && event.state.section) {
+        showSection(event.state.section, false);
+    } else {
+        const path = window.location.pathname;
+        if (path === '/guild') showSection('#guild-section', false);
+        else if (path === '/catalog') showSection('#catalog-section', false);
+        else if (path === '/dashboard') showSection('#main-dashboard', false);
+        else showSection('#hero-section', false);
+    }
+});
+
+function renderGuild() {
+    const mockCazadores = [
+        { name: 'SoloLeveling', rank: 'Cazador Rango S (Titán)', reps: 15000 },
+        { name: 'GokuBodyweight', rank: 'Cazador Rango S (Titán)', reps: 12000 },
+        { name: 'SaitamaPushups', rank: 'Cazador Rango A (Monarca)', reps: 9000 },
+        { name: 'BakiHater', rank: 'Cazador Rango B (Sombra)', reps: 5000 },
+        { name: 'CalisteniaExtrema', rank: 'Cazador Rango C (Élite)', reps: 2500 }
+    ];
+
+    let hunters = [...mockCazadores];
+    
+    if (userProfile) {
+        hunters.push({
+            name: 'Tú (Titán)',
+            rank: userProfile.currentRank || 'Cazador Rango E',
+            reps: userProfile.lifetimeReps || 0,
+            isUser: true
+        });
+    }
+
+    // Ordenar por repeticiones
+    hunters.sort((a, b) => b.reps - a.reps);
+
+    const tbody = document.getElementById('guild-tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    hunters.forEach((hunter, index) => {
+        const pos = index + 1;
+        let rowClass = '';
+        let rankStyle = '';
+        
+        if (pos === 1) { rankStyle = 'color: #ffd700; font-weight: 900; font-size: 1.2rem;'; rowClass += ' top-1'; }
+        else if (pos === 2) { rankStyle = 'color: #c0c0c0; font-weight: 900; font-size: 1.1rem;'; rowClass += ' top-2'; }
+        else if (pos === 3) { rankStyle = 'color: #cd7f32; font-weight: 900;'; rowClass += ' top-3'; }
+        
+        if (hunter.isUser) {
+            rowClass += ' user-row';
+        }
+
+        tbody.innerHTML += `
+            <tr class="${rowClass}" style="border-bottom: 1px solid rgba(255,255,255,0.05); ${hunter.isUser ? 'border: 1px solid var(--accent); background: rgba(234,179,8,0.05);' : ''}">
+                <td style="padding: 1rem; font-family: 'Oswald'; ${rankStyle}">${pos}</td>
+                <td style="padding: 1rem;">
+                    <div style="font-weight: 700; ${hunter.isUser ? 'color: var(--accent);' : 'color: white;'}">${hunter.name}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">${hunter.rank}</div>
+                </td>
+                <td style="padding: 1rem; text-align: right; font-family: 'Oswald'; color: var(--accent); font-size: 1.1rem;">${hunter.reps.toLocaleString()}</td>
+            </tr>
+        `;
+    });
+}
+
+async function subscribeToPushNotifications() {
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            const registration = await navigator.serviceWorker.ready;
+            
+            // Obtener la clave pública desde el servidor
+            const keyResponse = await fetch('/api/vapid-public-key');
+            const { publicKey } = await keyResponse.json();
+            
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: publicKey
+            });
+            
+            await fetch('/api/subscribe', {
+                method: 'POST',
+                body: JSON.stringify(subscription),
+                headers: {
+                    'content-type': 'application/json'
+                }
+            });
+            console.log('Push subscription sent to server.');
+        }
+    } catch (error) {
+        console.error('Error subscribing to push notifications:', error);
+    }
+}
+
+window.onload = function() {
+    loadExercises();
+    const path = window.location.pathname;
+    if (path === '/guild') showSection('#guild-section', false);
+    else if (path === '/catalog') showSection('#catalog-section', false);
+    else if (path === '/dashboard') showSection('#main-dashboard', false);
+    else if (path === '/') {
+        // Si está en la raíz, dejamos que loadExercises decida si mostrar dashboard o hero
+        setTimeout(() => {
+            if (userProfile) showSection('#main-dashboard', false);
+            else showSection('#hero-section', false);
+        }, 100);
+    }
+};
 
 // PWA Service Worker Registration
 if ('serviceWorker' in navigator) {

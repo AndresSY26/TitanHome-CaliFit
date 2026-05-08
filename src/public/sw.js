@@ -73,3 +73,19 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
+
+// Evento Push: Manejo de notificaciones remotas
+self.addEventListener('push', (event) => {
+    const data = event.data ? event.data.json() : {};
+    
+    const options = {
+        body: data.body || 'Tu misión te espera.',
+        icon: data.icon || '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        vibrate: [300, 100, 300, 100, 300]
+    };
+    
+    event.waitUntil(
+        self.registration.showNotification(data.title || '🤖 Coach Titán', options)
+    );
+});

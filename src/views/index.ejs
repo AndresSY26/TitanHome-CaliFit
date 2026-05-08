@@ -14,6 +14,9 @@
             </div>
             <div class="nav-right">
                 <span class="nav-slogan">Forja tu cuerpo sin excusas</span>
+                <button class="btn btn-ghost btn-sm" onclick="showSection('guild-section')" style="margin-right: 0.5rem; color: var(--text-secondary);">
+                    <i class="fa-solid fa-users-rays"></i> Gremio
+                </button>
                 <button class="btn btn-primary btn-sm" onclick="openProfileModal()">
                     <i class="fa-solid fa-bolt"></i> <span id="nav-btn-text">Mi Plan</span>
                 </button>
@@ -36,6 +39,7 @@
     <main class="container main-content">
         <%- include('partials/dashboard') %>
         <%- include('partials/catalog') %>
+        <%- include('partials/guild') %>
 
         <div id="loading-state" class="state-msg hidden">
             <div class="loader"></div>

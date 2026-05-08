@@ -46,6 +46,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Rutas
 app.use('/api', apiRoutes);
-app.get('/', (req, res) => res.render('index'));
+
+// Fallback para SPA (Soporte de URLs limpias)
+app.get('*', (req, res) => {
+    res.render('index');
+});
 
 app.listen(PORT, () => console.log(`\n🚀 TitanHome CaliFit - Arquitectura Robusta Activa\n🔗 URL: http://localhost:${PORT}\n`));
